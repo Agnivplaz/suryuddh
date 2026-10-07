@@ -1,0 +1,26 @@
+# Render blueprint. Connect the repo; Render reads this file.
+# Free plan sleeps after ~15 min idle (see docs/05-DEPLOYMENT.md §B) — use the
+# cron-job.org keep-alive described there, or Fly.io for an always-on arena.
+services:
+  - type: web
+    name: sur-yuddh
+    runtime: node
+    plan: free
+    buildCommand: cd server && npm install
+    startCommand: cd server && npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: DB_CLIENT
+        value: postgres
+      - key: DB_SSL
+        value: "true"
+      - key: TRUST_PROXY
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true          # Render generates a strong one for you
+      - key: DATABASE_URL
+        sync: false                  # paste your Neon / Supabase URL in the dashboard
