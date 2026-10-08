@@ -1,5 +1,0 @@
-{
-  "_help": "WHERE IS THE MATCH SERVER? Leave \"server\" empty when the game is served by the Sur Yuddh Node server (the normal setup). If this game is hosted on Netlify, GitHub Pages or any static host, put your server's address in it, with https:// and no trailing slash. You only ever edit the text between the quotes.",
-  "_example": "https://sur-yuddh.onrender.com",
-  "server": ""
-}
