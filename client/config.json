@@ -1,0 +1,5 @@
+{
+  "_help": "WHERE IS THE MATCH SERVER? This game is hosted on Netlify, which cannot run the server, so the address of the Node server goes here. It is already filled in for this project. Only change the text between the quotes: https:// with no trailing slash.",
+  "_example": "https://sur-yuddh.onrender.com",
+  "server": "https://suryuddh.onrender.com"
+}

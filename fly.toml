@@ -1,0 +1,40 @@
+# Fly.io deployment for Sur Yuddh.
+#   cd sur-yuddh-online           <-- run everything from the PROJECT ROOT
+#   fly launch --no-deploy --copy-config
+#   fly secrets set JWT_SECRET=... DATABASE_URL=... DB_CLIENT=postgres DB_SSL=true TRUST_PROXY=true
+#   fly deploy
+app = "sur-yuddh"
+primary_region = "sin"                 # Singapore — closest Fly region to India
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "8080"
+  HOST = "0.0.0.0"
+  PUBLIC_DIR = "/app/client"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false            # keep it warm: a sleeping arena ruins a demo
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = "connections"                # WebSocket relays count as connections, not requests
+    soft_limit = 200
+    hard_limit = 400
+
+[[http_service.checks]]
+  interval = "30s"
+  timeout = "5s"
+  grace_period = "15s"
+  method = "GET"
+  path = "/healthz"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256

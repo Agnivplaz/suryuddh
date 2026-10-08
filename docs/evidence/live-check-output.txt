@@ -1,0 +1,106 @@
+SUR YUDDH — LIVE SYSTEM CHECK OUTPUT
+Captured: 2026-10-07  (against the server in this workspace, http://localhost:8080)
+Command : cd server && node tools/live-check.mjs --seconds 26
+
+What this file is: the online system playing itself end to end, from outside the
+browser, and then trying to cheat it. Two synthetic players sign up, get matched by
+the server, fight for 26 real seconds over the WebSocket, report the same result,
+and the server pays the winner XP. After that the same client sends six fake XP
+writes and two rigged win claims — every one is refused.
+
+Reproduce yourself:  cd server && npm start   (terminal 1)
+                     npm run selfcheck        (terminal 2)
+
+----------------------------------------------------------------------
+
+  SUR YUDDH — LIVE SYSTEM CHECK
+  server http://localhost:8080  ·  fighting 26s  ·  accounts livecheck_a_vvdp / livecheck_b_vvdp
+
+
+0 · Is the server up, and what is it running?
+─────────────────────────────────────────────────────
+  PASS  GET /healthz answers — uptime 3s
+  PASS  GET /api/status reports the hub — 0 online
+  PASS  game files are being served from the same origin
+
+1 · Accounts (username + password, no email anywhere)
+─────────────────────────────────────────────────────────────
+  PASS  signup works and returns a UUID + token — 525636cf-2a17-4ef7-a516-53e9dfa7f9c6
+  PASS  second signup works for the opponent
+      (skipping the 3 negative-signup checks — run with --full to include them)
+  PASS  login with the same credentials works
+
+2 · Quick Match — two players, real network
+───────────────────────────────────────────────────
+  PASS  both sockets authenticated
+  PASS  latency probe (ping → pong)
+  PASS  server knows one player is queued — queued=1
+  PASS  matchmaker paired the two players — abd95c9f… slots 1/2
+  PASS  the pair is assigned complementary slots (host=1, guest=2)
+  PASS  roles differ: one simulation host, one input sender — host=livecheck_a_vvdp guest=livecheck_b_vvdp
+
+3 · Instrument pick and the synchronised start
+──────────────────────────────────────────────────────
+  PASS  both ready → the server starts the match itself
+  PASS  browser was NOT allowed to choose who is host
+
+4 · Fighting for 26s (host streams snapshots, guest streams inputs)
+───────────────────────────────────────────────────────────────────────────
+      t+5s   inMatch=1  snapshots=99  inputs=151
+      t+10s   inMatch=1  snapshots=200  inputs=303
+      t+15s   inMatch=1  snapshots=300  inputs=454
+      t+20s   inMatch=1  snapshots=400  inputs=606
+      t+25s   inMatch=1  snapshots=500  inputs=758
+  PASS  host was allowed to stream ~20 snapshots/second — 520 snapshots
+  PASS  guest was allowed to stream ~30 input frames/second — 788 frames
+  PASS  server kept the match open the whole time (no false void)
+
+5 · Both players report the same result → server pays XP
+────────────────────────────────────────────────────────────────
+  PASS  server sent match:result to the clients — win vs livecheck_b_vvdp · 43 XP · ko · validated=true
+  PASS  the verdict came from the server (serverValidated flag)
+  PASS  the winner was paid XP — xpEarned=43 · {"base":100,"durationScale":0.434,"opponentScale":1,"repeatScale":1,"raw":43.38,"capped":43,"granted":43,"trim
+  PASS  the GLOBAL LEADERBOARD read back over REST — top: demo_ishita (665 XP)
+  PASS  the winner has XP, games_played and a win on their profile — livecheck_a_vvdp: 43 XP, 1W-0L
+  PASS  the loser got a loss, not XP — livecheck_b_vvdp: 13 XP, 0W-1L
+  PASS  match history is stored with opponent, outcome, XP and duration — vs livecheck_b_vvdp · win · 43 XP · 26s · sitar vs tabla
+  PASS  the finished match is marked server-validated — validated=true
+
+6 · ATTACK — "I earned 50,000 XP", sent straight at the API
+───────────────────────────────────────────────────────────────────
+  PASS  POST /api/me/xp is refused — HTTP 404 Unknown API route.
+  PASS  POST /api/players/me/xp is refused — HTTP 404 Unknown API route.
+  PASS  PATCH /api/me is refused — HTTP 404 Unknown API route.
+  PASS  POST /api/leaderboard is refused — HTTP 404 Unknown API route.
+  PASS  POST /api/matches (fake win) is refused — HTTP 404 Unknown API route.
+  PASS  PUT /api/me cannot reset stats either — HTTP 404
+  PASS  XP total is unchanged after every injection attempt — 43 XP
+
+7 · ATTACK — both players claim "win" (a rigged client)
+───────────────────────────────────────────────────────────────
+      queued; the matchmaker deliberately waits ~8s before pairing the same two players again…
+  PASS  second match started
+  PASS  conflicting claims are detected — awaiting_opponent_claim
+  PASS  the rigged match paid nobody — not paid
+
+8 · ATTACK — the "too fast to be real" match
+────────────────────────────────────────────────────
+  PASS  a client cannot end a match it is not in
+  PASS  no endpoint takes a match id + an XP number — every XP write is inside server code (grantXp)
+
+9 · Where the numbers live now
+────────────────────────────────────────
+      GLOBAL LEADERBOARD (top 5)
+      #   player                 total XP   W-L
+      1   demo_ishita               665   5-1
+      2   demo_meera                506   3-1
+      3   demo_ananya               274   2-3
+      4   demo_kabir                242   1-2
+      5   demo_aarav                182   1-2
+
+  cleaned up 2 test account(s) (use --keep to leave them)
+
+RESULT
+────────────────────────────────────────
+  ALL GOOD  —  37/37 checks passed
+

@@ -1,0 +1,77 @@
+# Netlify configuration for the Sur Yuddh game client.
+#
+# WHAT NETLIFY HOSTS HERE:  the game itself (static files from client/).
+# WHAT NETLIFY CANNOT HOST: the match server — accounts, matchmaking, the
+#   authoritative match and XP. Netlify runs short-lived functions, not a
+#   long-running Node process with WebSockets, so /ws can never work here.
+#   That server lives on Render / Fly.io / an exhibition laptop.
+#   Full click-by-click guide: docs/06-NETLIFY.md
+
+[build]
+  publish = "client"
+  command = "echo 'static client only — nothing to build'"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# NOTE — this file is only read from Netlify's BASE directory. If your repo has
+# an extra folder level (everything inside `sur-yuddh-online/`), Netlify will not
+# find it: set Base directory = `sur-yuddh-online` in
+# Site configuration → Build & deploy → Build settings, and every path above
+# resolves correctly. See docs/06-NETLIFY.md.
+
+# ---------------------------------------------------------------------------
+# If you deployed the match server somewhere, uncomment its block and put the
+# SAME host in MATCH_SERVER_URL (Netlify → Site configuration → Environment
+# variables). Leave both commented and the game still loads and plays offline.
+# ---------------------------------------------------------------------------
+
+# Render (free tier — note it sleeps after ~15 min idle)
+#[[redirects]]
+#  from = "/api/*"
+#  to = "https://sur-yuddh.onrender.com/api/:splat"
+#  status = 200
+#  force = true
+#
+#[[redirects]]
+#  from = "/ws"
+#  to = "wss://sur-yuddh.onrender.com/ws"
+#  status = 200
+#  force = true
+
+# ---------------------------------------------------------------------------
+# Without a match server, any /api/* or /ws request lands on the signal
+# function so the browser gets a helpful JSON explanation instead of a 404.
+# These rules sit BELOW the commented ones on purpose: Netlify uses the first
+# matching rule, so uncommenting the blocks above overrides them.
+# ---------------------------------------------------------------------------
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/signal"
+  status = 200
+
+[[redirects]]
+  from = "/ws"
+  to = "/.netlify/functions/signal"
+  status = 200
+
+# Any unknown path → the game itself (single-page feel)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "SAMEORIGIN"
+
+# The vendored three.js + post-processing bundle never changes: cache it hard.
+[[headers]]
+  for = "/vendor/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"

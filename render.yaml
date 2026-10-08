@@ -1,0 +1,32 @@
+# Render blueprint. Connect the repo; Render reads this file.
+#
+# NOTE — if your GitHub repo has an extra folder level (everything inside a
+# `sur-yuddh-online/` folder copied from the zip), uncomment `rootDir` below.
+# Easier still: set it in the dashboard, Settings → Build & Deploy →
+# Root Directory = sur-yuddh-online. See docs/06-NETLIFY.md.
+# Free plan sleeps after ~15 min idle (see docs/05-DEPLOYMENT.md §B) — use the
+# cron-job.org keep-alive described there, or Fly.io for an always-on arena.
+services:
+  - type: web
+    name: sur-yuddh
+    runtime: node
+    #rootDir: sur-yuddh-online      # ← uncomment if the zip folder is the repo root
+    plan: free
+    buildCommand: cd server && npm install
+    startCommand: cd server && npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: DB_CLIENT
+        value: postgres
+      - key: DB_SSL
+        value: "true"
+      - key: TRUST_PROXY
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true          # Render generates a strong one for you
+      - key: DATABASE_URL
+        sync: false                  # paste your Neon / Supabase URL in the dashboard
