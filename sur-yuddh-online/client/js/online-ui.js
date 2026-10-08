@@ -16,6 +16,7 @@
     queueing: false,
     room: null,
     lastLobbyFocus: null,
+    noticeShown: false,          // "no match server configured" notice, once per page
   };
 
   /* ============================================================ overlays */
@@ -111,6 +112,7 @@
       afterAuth();
     } catch (err) {
       $('loginErr').textContent = err.message || 'Could not sign in.';
+      if (err.hint) toast(err.hint, true);
     } finally { btn.disabled = false; }
   });
 
@@ -128,6 +130,7 @@
       afterAuth();
     } catch (err) {
       $('signErr').textContent = err.message || 'Could not create the profile.';
+      if (err.hint) toast(err.hint, true);
     } finally { btn.disabled = false; }
   });
 
@@ -311,7 +314,10 @@
       const data = await SYnet.leaderboard({ limit: 50, q: $('boardSearch').value.trim() });
       renderBoard(data);
     } catch (e) {
-      body.innerHTML = '<div class="empty">Could not load the leaderboard. ' + esc(e.message) + '</div>';
+      const hint = e.hint
+        ? '<div class="empty" style="margin-top:-10px;font-size:13px;opacity:.85">' + esc(e.hint) + '</div>'
+        : '';
+      body.innerHTML = '<div class="empty">Could not load the leaderboard. ' + esc(e.message) + '</div>' + hint;
     }
   }
 
@@ -421,6 +427,14 @@
   SYnet.on('match:start', () => closeAll());
   SYnet.on('match:result', () => { if (OPEN.has('ovProfile')) openProfile(); });
   SYnet.on('toast', (t) => toast(typeof t === 'string' ? t : t.text));
+
+  /* The page is on a static host and no match server is configured: /api/* 404s.
+     Say what to do once, instead of leaving the player with "HTTP 404". */
+  SYnet.on('server:missing', () => {
+    if (state.noticeShown) return;
+    state.noticeShown = true;
+    toast('Offline only: this page cannot reach the match server. Set window.__SY_SERVER__ (see docs/06-NETLIFY.md). Type SY.diagnose() for details.', true);
+  });
   SYnet.on('ui:openLobby', (m) => {
     requireLogin(() => {
       open('ovOnline');

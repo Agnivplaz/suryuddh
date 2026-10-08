@@ -466,9 +466,6 @@ table.tbl tr.me td{font-weight:700}
 <script src="vendor/MaskPass.js"></script>
 <script src="vendor/UnrealBloomPass.js"></script>
 <script>
-  window.__SY_SERVER__ = 'https://suryuddh.onrender.com';
-</script>
-<script>
 (function(){
 'use strict';
 const T=THREE,PI=Math.PI,TAU=PI*2,sin=Math.sin,cos=Math.cos,atan2=Math.atan2,hyp=Math.hypot,exp=Math.exp;
@@ -2089,8 +2086,54 @@ window.__sur={G:G,INSTRUMENTS:INSTRUMENTS,ELEM:ELEM,TUNE:TUNE,In:In,useMove:useM
         js/mp.js         → host & guest match sync, XP result wiring
      Loaded after the game so they can use window.__sur.
      ===================================================================== -->
+<!-- ── WHERE IS THE MATCH SERVER? ────────────────────────────────────────
+     PREFERRED: edit config.json (a separate file in this folder). Change one
+     piece of text between the quotes — you cannot break this page that way:
+
+         { "server": "https://sur-yuddh.onrender.com" }
+
+     Leave it empty ("") when the Node server is serving this page, which is the
+     normal setup. This line below is only an override for the rare case where
+     you want the address inside the HTML; it wins over config.json when set.
+
+     Guide: docs/06-NETLIFY.md (Part 2) -->
+<script>window.__SY_SERVER__ = '';</script>
 <script src="js/net.js"></script>
 <script src="js/online-ui.js"></script>
 <script src="js/mp.js"></script>
+
+<!-- ── SELF-CHECK ─────────────────────────────────────────────────────────
+     If any of the three files above failed to load (wrong publish folder, a
+     host that returns an HTML page instead of the script, a typo while editing
+     this file), the online layer simply would not exist and the buttons would
+     look dead with no explanation. So: say it out loud. -->
+<script>
+(function () {
+  function banner(msg) {
+    var d = document.createElement('div');
+    d.setAttribute('role', 'alert');
+    d.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:99999;'
+      + 'background:#3a1010;color:#ffd9d9;border-top:1px solid #a33;'
+      + 'font:13px/1.5 system-ui,Segoe UI,Roboto,sans-serif;padding:12px 16px;'
+      + 'white-space:pre-wrap;';
+    d.textContent = msg;
+    document.body.appendChild(d);
+  }
+  window.addEventListener('load', function () {
+    var missing = [];
+    if (!window.SY) missing.push('js/net.js');
+    if (!window.__ui) missing.push('js/online-ui.js');
+    if (!window.__mp) missing.push('js/mp.js');
+    if (!missing.length) return;
+    banner(
+      'Sur Yuddh: the online layer did not load (' + missing.join(', ') + ').\n'
+      + 'Online play, accounts and the leaderboard are unavailable — "vs Computer" still works.\n'
+      + 'Check that the js/ folder was uploaded and that the publish directory points at the '
+      + 'folder containing index.html. You can also open the browser console (F12) for the exact error.\n'
+      + 'Guide: docs/06-NETLIFY.md'
+    );
+  });
+})();
+</script>
 </body>
 </html>
