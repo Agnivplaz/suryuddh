@@ -2135,5 +2135,19 @@ window.__sur={G:G,INSTRUMENTS:INSTRUMENTS,ELEM:ELEM,TUNE:TUNE,In:In,useMove:useM
   });
 })();
 </script>
+<!-- Optional on-page debug console -->
+<script>
+  if (new URLSearchParams(window.location.search).get('debug') === '1') {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/eruda';
+    script.onload = function () {
+      eruda.init();
+    };
+    script.onerror = function () {
+      console.warn('Eruda could not load.');
+    };
+    document.body.appendChild(script);
+  }
+</script>
 </body>
 </html>
